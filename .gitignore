@@ -1,0 +1,40 @@
+# ── Python / Backend ──────────────────────────────
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Environment variables (NEVER commit these) ────
+backend/.env
+frontend/.env.local
+.env
+.env.local
+.env.*
+
+# ── Database ──────────────────────────────────────
+backend/instructiq.db
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Next.js / Frontend ────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# ── OS files ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE ───────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
