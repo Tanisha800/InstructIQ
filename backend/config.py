@@ -10,6 +10,8 @@ class Config:
     GROQ_MAX_TOKENS: int = 4096
     GROQ_TEMPERATURE: float = 0.7
 
+    CORS_ORIGINS: list = ["*"] 
+
     # ── Evaluation ────────────────────────────────────
     PASS_THRESHOLD: float = 0.80
     MAX_FEEDBACK_ITERATIONS: int = 3
