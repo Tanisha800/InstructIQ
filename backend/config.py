@@ -10,7 +10,7 @@ class Config:
     GROQ_MAX_TOKENS: int = 4096
     GROQ_TEMPERATURE: float = 0.7
 
-    CORS_ORIGINS: list = ["*"]
+
 
     # ── Evaluation ────────────────────────────────────
     PASS_THRESHOLD: float = 0.80
@@ -27,7 +27,7 @@ class Config:
     # ── FastAPI ───────────────────────────────────────
     APP_TITLE: str = "InstructIQ API"
     APP_VERSION: str = "1.0.0"
-    CORS_ORIGINS: list = ["http://localhost:3000"]  # Next.js frontend
+    CORS_ORIGINS: list = ["*"]  # Allow all origins (local + hosted frontend)
 
     # ── SSE ───────────────────────────────────────────
     SSE_PING_INTERVAL: int = 15  # seconds between keep-alive pings
