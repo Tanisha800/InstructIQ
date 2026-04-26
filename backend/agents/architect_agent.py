@@ -1,14 +1,14 @@
 import json
 import re
 import uuid
-from groq import Groq
+import google.generativeai as genai
 from config import config
 from models import (
     LessonBlueprint, LearningObjective, Module,
     Exercise, AssessmentCheckpoint, ProcessedKnowledge
 )
 
-client = Groq(api_key=config.GROQ_API_KEY)
+genai.configure(api_key=config.GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
 You are a senior Instructional Designer with 20+ years of experience.
@@ -202,17 +202,16 @@ QUANTITY REQUIREMENTS:
 """
 
     try:
-        response = client.chat.completions.create(
-            model=config.GROQ_MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": prompt}
-            ],
-            max_tokens=config.GROQ_MAX_TOKENS,
-            temperature=0.3,   # lower = more consistent structure
+        model = genai.GenerativeModel(
+            model_name=config.GEMINI_MODEL,
+            system_instruction=SYSTEM_PROMPT,
+            generation_config=genai.GenerationConfig(
+                temperature=0.3,
+                max_output_tokens=config.GROQ_MAX_TOKENS,
+            )
         )
-
-        raw  = response.choices[0].message.content.strip()
+        response = model.generate_content(prompt)
+        raw = response.text.strip()
         data = extract_json(raw)
 
         # Auto-fix common LLM mistakes before Pydantic validation

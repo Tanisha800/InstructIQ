@@ -1,13 +1,13 @@
 import json
 import re
-from groq import Groq
+import google.generativeai as genai
 from config import config
 from models import (
     FullLesson, LessonSection, Exercise,
     AssessmentCheckpoint, LessonBlueprint
 )
 
-client = Groq(api_key=config.GROQ_API_KEY)
+genai.configure(api_key=config.GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """You are a technical educator. Generate structured lesson content as valid JSON only.
 No markdown fences. No text before or after JSON. Output only the JSON object."""
@@ -117,17 +117,17 @@ Fill in the actual content based on the documentation. Keep each section content
 Output ONLY the JSON. No other text.
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": prompt}
-        ],
-        max_tokens=3000,
-        temperature=0.3,
+    model = genai.GenerativeModel(
+        model_name=config.GEMINI_MODEL,
+        system_instruction=SYSTEM_PROMPT,
+        generation_config=genai.GenerationConfig(
+            temperature=0.3,
+            max_output_tokens=3000,
+        )
     )
-
-    raw  = response.choices[0].message.content.strip()
+    
+    response = model.generate_content(prompt)
+    raw = response.text.strip()
     data = extract_json(raw)
 
     data["lesson_id"]  = blueprint.lesson_id
