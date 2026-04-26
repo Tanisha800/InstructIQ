@@ -210,9 +210,6 @@ Answer ALL {len(lesson.assessment)} questions and attempt ALL {len(lesson.exerci
 {GUARDRAILS}
 """
 
-    print(f"🎓 Student Agent attempting lesson v{lesson.version} "
-          f"(attempt #{attempt_number})")
-
     try:
         response = client.chat.completions.create(
             model=config.GROQ_MODEL,
@@ -236,10 +233,6 @@ Answer ALL {len(lesson.assessment)} questions and attempt ALL {len(lesson.exerci
             answers=[StudentAnswer(**a) for a in data["answers"]],
             exercise_attempts=data["exercise_attempts"]
         )
-
-        print(f"✅ Student completed attempt #{attempt_number} — "
-              f"{len(attempt.answers)} answers | "
-              f"{len(attempt.exercise_attempts)} exercise attempts")
 
         return attempt
 

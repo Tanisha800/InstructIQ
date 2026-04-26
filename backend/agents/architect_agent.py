@@ -201,8 +201,6 @@ QUANTITY REQUIREMENTS:
 {GUARDRAILS}
 """
 
-    print(f"🏗️  Architect Agent building blueprint for: {knowledge.topic_name}")
-
     try:
         response = client.chat.completions.create(
             model=config.GROQ_MODEL,
@@ -238,12 +236,6 @@ QUANTITY REQUIREMENTS:
             ],
             prerequisite_knowledge=data.get("prerequisite_knowledge", [])
         )
-
-        print(f"✅ Blueprint built — "
-              f"{len(blueprint.modules)} modules | "
-              f"{len(blueprint.objectives)} objectives | "
-              f"{len(blueprint.exercises)} exercises | "
-              f"{len(blueprint.assessment_checkpoints)} checkpoints")
 
         return blueprint
 

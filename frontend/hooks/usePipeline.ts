@@ -85,6 +85,10 @@ export function usePipeline() {
                             break
                         }
 
+                        if (event.event === "ping") {
+                            continue
+                        }
+
                         pushEvent(event)
 
                         // Handle specific events
@@ -131,7 +135,15 @@ export function usePipeline() {
                             }
 
                             if (event.event === "error") {
-                                next.error = event.error || "Unknown error"
+                                const raw = event.error || "Unknown error"
+                                // Friendly message for Groq rate limit errors
+                                if (raw.includes("rate_limit_exceeded") || raw.includes("Rate limit")) {
+                                    const match = raw.match(/try again in ([\d]+m[\d.]+s|[\d.]+s)/i)
+                                    const retryIn = match ? ` Please wait ${match[1]} and try again.` : " Please wait a few minutes and try again."
+                                    next.error = `⏳ Groq API rate limit reached (daily token limit).${retryIn}`
+                                } else {
+                                    next.error = raw
+                                }
                                 next.running = false
                             }
 

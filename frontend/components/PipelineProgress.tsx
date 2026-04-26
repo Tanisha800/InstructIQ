@@ -1,10 +1,8 @@
 // components/PipelineProgress.tsx
 "use client"
 
-import { useEffect, useRef } from "react"
-import { CheckCircle, Circle, Loader2, XCircle } from "lucide-react"
+import { CheckCircle, Circle, Loader2 } from "lucide-react"
 import { PipelineEvent } from "@/lib/types"
-import AgentStatusBadge from "./AgentStatusBadge"
 import { cn, scoreToColor, scoreToBarColor } from "@/lib/utils"
 
 interface Props {
@@ -41,14 +39,6 @@ function getStepStatus(stepKey: string, currentEvent: string, events: PipelineEv
 }
 
 export default function PipelineProgress({ events, currentEvent, running }: Props) {
-    const logRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-        if (logRef.current) {
-            logRef.current.scrollTop = logRef.current.scrollHeight
-        }
-    }, [events])
-
     const evalEvents = events.filter(e => e.event === "evaluation_result")
 
     return (
@@ -112,33 +102,13 @@ export default function PipelineProgress({ events, currentEvent, running }: Prop
                 </div>
             )}
 
-            {/* Live Event Log */}
-            <div className="card">
-                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                    Live Agent Log
-                </h3>
-                <div
-                    ref={logRef}
-                    className="space-y-2 max-h-64 overflow-y-auto pr-1"
-                >
-                    {events.map((ev, i) => (
-                        <div key={i} className="flex items-start gap-2 animate-fade-in">
-                            <AgentStatusBadge event={ev.event} iteration={ev.iteration} />
-                            {ev.message && (
-                                <span className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                                    — {ev.message}
-                                </span>
-                            )}
-                        </div>
-                    ))}
-                    {running && (
-                        <div className="flex items-center gap-2 text-gray-600 text-xs">
-                            <Loader2 size={12} className="animate-spin" />
-                            Processing...
-                        </div>
-                    )}
+            {/* Running indicator */}
+            {running && (
+                <div className="flex items-center gap-2 text-gray-500 text-xs px-1">
+                    <Loader2 size={12} className="animate-spin" />
+                    Processing...
                 </div>
-            </div>
+            )}
         </div>
     )
 }

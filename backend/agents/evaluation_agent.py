@@ -219,9 +219,6 @@ EVALUATION REQUIREMENTS:
 {GUARDRAILS}
 """
 
-    print(f"📊 Evaluation Engine scoring attempt #{attempt.attempt_number} "
-          f"for lesson: {lesson.topic_name}")
-
     try:
         response = client.chat.completions.create(
             model=config.GROQ_MODEL,
@@ -256,11 +253,6 @@ EVALUATION REQUIREMENTS:
             rewrite_instructions=data.get("rewrite_instructions", ""),
             overall_feedback=data.get("overall_feedback", "")
         )
-
-        status = "✅ PASSED" if passed else "❌ FAILED"
-        print(f"{status} — Score: {total_score:.1%} "
-              f"(threshold: {config.PASS_THRESHOLD:.0%}) | "
-              f"Failed sections: {len(evaluation.failed_sections)}")
 
         return evaluation
 

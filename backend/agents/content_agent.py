@@ -275,10 +275,6 @@ CONTENT REQUIREMENTS:
 {GUARDRAILS}
 """
 
-    print(f"✍️  Content Agent generating lesson v{version} for: {blueprint.topic_name}")
-    if rewrite_instructions:
-        print(f"🔄  Rewrite mode — applying feedback loop fixes")
-
     try:
         response = client.chat.completions.create(
             model=config.GROQ_MODEL,
@@ -312,10 +308,7 @@ CONTENT REQUIREMENTS:
             version=version
         )
 
-        print(f"✅ Lesson v{version} generated — "
-              f"{len(lesson.sections)} sections | "
-              f"{len(lesson.exercises)} exercises | "
-              f"{len(lesson.assessment)} checkpoints")
+        event_name = "lesson_rewritten" if version > 1 else "lesson_ready"
 
         return lesson
 

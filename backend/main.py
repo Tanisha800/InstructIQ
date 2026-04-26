@@ -72,13 +72,19 @@ async def generate_lesson(payload: DocsInput):
 
     async def event_stream():
         try:
-            async for event in run_pipeline(
-                payload.raw_docs,
-                payload.topic_name
-            ):
-                data = json.dumps(event, default=str)
-                yield f"data: {data}\n\n"
-                await asyncio.sleep(0.01)  # prevent buffer flooding
+            generator = run_pipeline(payload.raw_docs, payload.topic_name).__aiter__()
+            while True:
+                try:
+                    # Wait for next event, timeout every 15 seconds to send ping
+                    event = await asyncio.wait_for(generator.__anext__(), timeout=15.0)
+                    data = json.dumps(event, default=str)
+                    yield f"data: {data}\n\n"
+                    await asyncio.sleep(0.01)
+                except asyncio.TimeoutError:
+                    # Keep connection alive while LLM is thinking
+                    yield 'data: {"event": "ping"}\n\n'
+                except StopAsyncIteration:
+                    break
 
         except Exception as e:
             # Stream the error so frontend knows what happened

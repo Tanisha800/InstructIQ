@@ -10,96 +10,44 @@ interface Props {
     disabled?: boolean
 }
 
-const SAMPLE_DOCS = `# FastAPI Quick Reference
+const SAMPLE_DOCS = `# Newton's Laws of Motion
 
-FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.8+.
+Sir Isaac Newton's three laws of motion describe the relationship between a physical object and the forces acting upon it. Understanding these laws is fundamental to classical mechanics.
 
-## Installation
-pip install fastapi uvicorn
+## First Law: Inertia
+An object at rest remains at rest, and an object in motion remains in motion at constant speed and in a straight line unless acted on by an unbalanced force. 
+- Example: A soccer ball sitting on the ground won't move until someone kicks it.
 
-## Creating an App
-from fastapi import FastAPI
-app = FastAPI()
+## Second Law: Force and Acceleration
+The acceleration of an object depends on the mass of the object and the amount of force applied. 
+- Formula: Force = mass × acceleration (F = ma)
+- Example: It takes more force to push a heavy car than a light bicycle to achieve the same speed.
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-## Path Parameters
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
-
-## Request Body
-from pydantic import BaseModel
-
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: bool = None
-
-@app.post("/items/")
-def create_item(item: Item):
-    return item
-
-## Running the server
-uvicorn main:app --reload
-
-## Automatic Docs
-FastAPI auto-generates docs at /docs (Swagger UI) and /redoc.
-
-## Query Parameters
-@app.get("/users/")
-def read_users(skip: int = 0, limit: int = 10):
-    return {"skip": skip, "limit": limit}
-
-## HTTP Methods
-FastAPI supports GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD.
-
-## Status Codes
-from fastapi import status
-
-@app.post("/items/", status_code=status.HTTP_201_CREATED)
-def create_item(item: Item):
-    return item
-
-## Error Handling
-from fastapi import HTTPException
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int):
-    if item_id not in db:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return db[item_id]
-
-## Dependency Injection
-from fastapi import Depends
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@app.get("/users/")
-def read_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+## Third Law: Action and Reaction
+Whenever one object exerts a force on a second object, the second object exerts an equal and opposite force on the first.
+- Example: When you jump off a small boat, you push yourself forward towards the dock, and the boat moves backward away from the dock.
 `
 
 export default function DocUploader({ onSubmit, disabled }: Props) {
     const [docs, setDocs] = useState("")
     const [topic, setTopic] = useState("")
     const [dragOver, setDragOver] = useState(false)
+    const [errors, setErrors] = useState<{ topic?: string; docs?: string }>({})
 
     const handleSubmit = () => {
-        if (!docs.trim() || !topic.trim()) return
+        const newErrors: { topic?: string; docs?: string } = {}
+        if (!topic.trim()) newErrors.topic = "Topic name is required."
+        if (!docs.trim()) newErrors.docs = "Please paste some documentation content."
+        else if (docs.trim().length < 100) newErrors.docs = `Content too short — need at least 100 characters (you have ${docs.trim().length}).`
+        if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+        setErrors({})
         onSubmit(docs.trim(), topic.trim())
     }
 
     const loadSample = () => {
         setDocs(SAMPLE_DOCS)
-        setTopic("FastAPI Framework")
+        setTopic("Newton's Laws of Motion")
+        setErrors({})
     }
 
     const handleDrop = (e: React.DragEvent) => {
@@ -139,13 +87,14 @@ export default function DocUploader({ onSubmit, disabled }: Props) {
                 <input
                     type="text"
                     value={topic}
-                    onChange={e => setTopic(e.target.value)}
-                    placeholder="e.g. FastAPI, Redis, Stripe API..."
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3
-                     text-white placeholder-gray-500 focus:outline-none
-                     focus:border-blue-500 transition-colors"
+                    onChange={e => { setTopic(e.target.value); setErrors(p => ({ ...p, topic: undefined })) }}
+                    placeholder="e.g. Newton's Laws, FastAPI, Redis..."
+                    className={`w-full bg-gray-800 border rounded-xl px-4 py-3
+                     text-white placeholder-gray-500 focus:outline-none transition-colors
+                     ${errors.topic ? 'border-red-500 focus:border-red-400' : 'border-gray-700 focus:border-blue-500'}`}
                     disabled={disabled}
                 />
+                {errors.topic && <p className="text-xs text-red-400 flex items-center gap-1">⚠ {errors.topic}</p>}
             </div>
 
             {/* Docs Textarea with Drag & Drop */}
@@ -166,9 +115,12 @@ export default function DocUploader({ onSubmit, disabled }: Props) {
                 >
                     <textarea
                         value={docs}
-                        onChange={e => setDocs(e.target.value)}
-                        placeholder="Paste your raw documentation here...
-            
+                        onChange={e => { setDocs(e.target.value); setErrors(p => ({ ...p, docs: undefined })) }}
+                        placeholder="Paste your raw documentation, notes, or textbook content here (min 100 characters)...
+
+Example: Paste Wikipedia text, lecture notes, a README, or any written material about your topic.
+Do NOT just type a question — paste actual content to learn from.
+
 Or drag & drop a .txt / .md file"
                         rows={14}
                         disabled={disabled}
@@ -188,8 +140,9 @@ Or drag & drop a .txt / .md file"
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
-                    <span className="text-xs text-gray-600">
-                        {docs.length.toLocaleString()} characters
+                    <span className={`text-xs ${docs.trim().length > 0 && docs.trim().length < 100 ? 'text-amber-500' : docs.trim().length >= 100 ? 'text-green-500' : 'text-gray-600'}`}>
+                        {docs.trim().length.toLocaleString()} / 100 min chars
+                        {docs.trim().length >= 100 && ' ✓'}
                     </span>
                     <button
                         onClick={loadSample}
@@ -200,12 +153,13 @@ Or drag & drop a .txt / .md file"
                         Load sample docs →
                     </button>
                 </div>
+                {errors.docs && <p className="text-xs text-red-400 flex items-center gap-1 pt-1">⚠ {errors.docs}</p>}
             </div>
 
             {/* Submit */}
             <button
                 onClick={handleSubmit}
-                disabled={disabled || !docs.trim() || !topic.trim()}
+                disabled={disabled}
                 className="btn-primary w-full text-lg py-4 flex items-center justify-center gap-2"
             >
                 <Zap size={20} />
