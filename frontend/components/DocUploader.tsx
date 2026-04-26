@@ -61,6 +61,16 @@ export default function DocUploader({ onSubmit, disabled }: Props) {
         if (!topic) setTopic(file.name.replace(/\.[^/.]+$/, ""))
     }
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        const reader = new FileReader()
+        reader.onload = (ev) => setDocs(ev.target?.result as string)
+        reader.readAsText(file)
+        if (!topic) setTopic(file.name.replace(/\.[^/.]+$/, ""))
+        e.target.value = ''
+    }
+
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Header */}
@@ -99,10 +109,24 @@ export default function DocUploader({ onSubmit, disabled }: Props) {
 
             {/* Docs Textarea with Drag & Drop */}
             <div className="card space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <FileText size={14} />
-                    Raw Documentation
-                </label>
+                <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                        <FileText size={14} />
+                        Raw Documentation
+                    </label>
+                    
+                    <label className="text-xs flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-1.5 rounded-md cursor-pointer transition-colors text-gray-300">
+                        <Upload size={12} />
+                        Upload File
+                        <input 
+                            type="file" 
+                            accept=".txt,.md,.json,.csv" 
+                            onChange={handleFileUpload} 
+                            className="hidden" 
+                            disabled={disabled}
+                        />
+                    </label>
+                </div>
 
                 <div
                     className={cn(
