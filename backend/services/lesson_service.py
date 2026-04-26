@@ -12,6 +12,7 @@ from models import PipelineState, LessonStatus
 from services.knowledge_processor import process_docs
 from services.feedback_loop import run_feedback_loop
 from agents import architect_agent, content_agent
+import asyncio
 import database
 
 def _sse(event: str, message: str, **kwargs) -> dict:
@@ -70,7 +71,7 @@ async def run_pipeline(
             "🔍 Chunking and analyzing documentation..."
         )
 
-        knowledge = process_docs(raw_docs, topic_name)
+        knowledge = await asyncio.to_thread(process_docs, raw_docs, topic_name)
         state.processed_knowledge = knowledge
 
         yield _sse(
@@ -91,7 +92,7 @@ async def run_pipeline(
             "🏗️  Architect Agent building lesson blueprint..."
         )
 
-        blueprint = architect_agent.build_blueprint(knowledge, lesson_id)
+        blueprint = await asyncio.to_thread(architect_agent.build_blueprint, knowledge, lesson_id)
         state.blueprint = blueprint
 
         # Save blueprint to DB
@@ -126,10 +127,11 @@ async def run_pipeline(
         )
 
         # FIX: was generate_lesson → correct name is build_lesson
-        lesson = content_agent.build_lesson(
-            blueprint=blueprint,
-            raw_docs=raw_docs,
-            version=1
+        lesson = await asyncio.to_thread(
+            content_agent.build_lesson,
+            blueprint,  # positional arguments
+            raw_docs,
+            1           # version
         )
         state.current_lesson = lesson
         state.lesson_versions.append(lesson)

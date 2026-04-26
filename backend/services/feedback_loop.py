@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import asyncio
 
 # Add backend root to path so database.py is found
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,7 +27,7 @@ async def run_feedback_loop(
     state: PipelineState
 ) -> AsyncGenerator[dict, None]:
     """
-    Core of the self-validating feedback loop from the PDF:
+    Core of the self-validating feedback loop:
 
     LOOP:
       1. Simulated Student attempts the lesson
@@ -35,11 +36,9 @@ async def run_feedback_loop(
       4. If score < 80%  → rewrite_instructions → Content Agent rewrites
       5. Repeat until pass or max iterations reached
       6. If max iterations hit → escalate for human review
-
-    Yields SSE events at every step so frontend shows live progress.
     """
 
-    previous_lesson_json = None  # for diff viewer
+    previous_lesson_json = None
 
     while state.iteration < config.MAX_FEEDBACK_ITERATIONS:
         state.iteration += 1
@@ -54,10 +53,13 @@ async def run_feedback_loop(
         )
 
         try:
-            attempt = student_agent.attempt_lesson(
+            attempt = await asyncio.to_thread(
+                student_agent.attempt_lesson,
                 state.current_lesson,
                 state.iteration
             )
+            await asyncio.sleep(5)          # ← delay after student
+
         except Exception as e:
             yield _sse(
                 "error",
@@ -65,6 +67,7 @@ async def run_feedback_loop(
                 iteration=state.iteration,
                 fatal=False
             )
+            await asyncio.sleep(10)         # ← longer delay on error
             continue
 
         # Save attempt to DB
@@ -85,12 +88,14 @@ async def run_feedback_loop(
         )
 
         try:
-            evaluation = evaluation_agent.evaluate_attempt(
+            evaluation = await asyncio.to_thread(
+                evaluation_agent.evaluate_attempt,
                 state.current_lesson,
                 attempt
             )
             state.last_evaluation = evaluation
             state.evaluation_history.append(evaluation)
+            await asyncio.sleep(5)          # ← delay after evaluation
 
         except Exception as e:
             yield _sse(
@@ -99,6 +104,7 @@ async def run_feedback_loop(
                 iteration=state.iteration,
                 fatal=False
             )
+            await asyncio.sleep(10)         # ← longer delay on error
             continue
 
         # Save evaluation to DB
@@ -186,20 +192,22 @@ async def run_feedback_loop(
             rewrite_instructions=evaluation.rewrite_instructions
         )
 
-        # Save current lesson JSON for diff viewer before rewrite
+        # Save current lesson for diff viewer
         previous_lesson_json = _safe_dump(state.current_lesson)
 
         new_version = state.current_lesson.version + 1
 
         try:
-            rewritten_lesson = content_agent.build_lesson(
-                blueprint=state.blueprint,
-                raw_docs=state.raw_docs,
-                version=new_version,
-                rewrite_instructions=evaluation.rewrite_instructions
+            rewritten_lesson = await asyncio.to_thread(
+                content_agent.build_lesson,
+                state.blueprint,
+                state.raw_docs,
+                new_version,
+                evaluation.rewrite_instructions
             )
             state.current_lesson = rewritten_lesson
             state.lesson_versions.append(rewritten_lesson)
+            await asyncio.sleep(5)          # ← delay after rewrite
 
         except Exception as e:
             yield _sse(
@@ -208,6 +216,7 @@ async def run_feedback_loop(
                 iteration=state.iteration,
                 fatal=False
             )
+            await asyncio.sleep(10)         # ← longer delay on error
             continue
 
         # Save new version to DB
@@ -226,7 +235,6 @@ async def run_feedback_loop(
             f"Re-testing with simulated student...",
             iteration=state.iteration,
             version=new_version,
-            # Send both versions for DiffViewer.tsx
             previous_lesson=json.loads(previous_lesson_json) if previous_lesson_json else None,
             new_lesson=rewritten_lesson.model_dump()
         )
@@ -260,7 +268,6 @@ async def run_feedback_loop(
         score=final_score,
         score_percent=round(final_score * 100, 1),
         threshold_percent=round(config.PASS_THRESHOLD * 100, 1),
-        # Still send best lesson so user isn't left empty handed
         lesson=state.current_lesson.model_dump() if state.current_lesson else None,
         evaluation_history=[e.model_dump() for e in state.evaluation_history]
     )

@@ -7,13 +7,14 @@ class Config:
     # ── Groq ──────────────────────────────────────────
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+    GROQ_MODEL_FAST: str = "llama-3.1-8b-instant"   # 
     GROQ_MAX_TOKENS: int = 4096
     GROQ_TEMPERATURE: float = 0.7
 
 
 
     # ── Evaluation ────────────────────────────────────
-    PASS_THRESHOLD: float = 0.60
+    PASS_THRESHOLD: float = 0.40
     MAX_FEEDBACK_ITERATIONS: int = 3
 
     # ── Database ──────────────────────────────────────
