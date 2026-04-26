@@ -11,7 +11,7 @@ class Config:
 
     # ── Gemini ────────────────────────────────────────
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
     # ── AI Provider ───────────────────────────────────
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini")  # "gemini" or "groq"
